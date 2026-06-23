@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImportCalc - Calculadora Financiera de Importación</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 3px;
+    }
+
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body
+  class="bg-[#F8FAFC] dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] font-sans antialiased min-h-screen flex flex-col md:flex-row">
+
+  <div
+    class="md:hidden bg-[#1E3A5F] text-white p-4 flex justify-between items-center w-full fixed top-0 z-50 shadow-md">
+    <span class="font-bold tracking-wider flex items-center gap-2">
+      <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+        </path>
+      </svg>
+      IMPORTCALC
+    </span>
+    <button id="btn-menu" class="p-2 focus:outline-none">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+  </div>
+
+  <aside id="sidebar"
+    class="w-[240px] bg-[#1E3A5F] text-[#CBD5E1] fixed inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col pt-16 md:pt-0 shadow-xl border-r border-slate-800">
+    <div class="p-6 hidden md:flex items-center gap-2 border-b border-slate-700/50">
+      <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+        </path>
+      </svg>
+      <span class="font-bold text-white text-lg tracking-wider">Calculadora del Importador</span>
+    </div>
+
+    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar text-sm">
+      <div class="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Módulo 1: Importación</div>
+      <a href="#sec-generales"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Datos
+        generales</a>
+      <a href="#sec-fob"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Coste
+        FOB</a>
+      <a href="#sec-embalaje"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Embalaje
+        y Cubaje</a>
+      <a href="#sec-contenedor"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Contenedor</a>
+      <a href="#sec-flete"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Flete
+        Marítimo</a>
+      <a href="#sec-seguro"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Seguro
+        Internacional</a>
+      <a href="#sec-aranceles"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Aranceles
+        Aduana</a>
+      <a href="#sec-destino"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Gastos
+        en Destino</a>
+      <a href="#sec-resultados1"
+        class="nav-item flex items-center px-3 py-2 rounded-lg font-medium text-emerald-400 hover:bg-slate-800 transition-colors duration-150">✓
+        Resumen Costes</a>
+
+      <div class="px-3 py-2 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Módulo 2: Comercial
+      </div>
+      <a href="#sec-comercial"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Estructura
+        de Gastos</a>
+      <a href="#sec-resultados2"
+        class="nav-item flex items-center px-3 py-2 rounded-lg font-medium text-blue-400 hover:bg-slate-800 transition-colors duration-150">✓
+        Resultados PVP</a>
+
+      <div class="px-3 py-2 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Historial y Datos</div>
+      <a href="#sec-historico"
+        class="nav-item flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-150">Histórico
+        operaciones</a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-700/50 space-y-2 bg-slate-900/40">
+      <button id="btn-save"
+        class="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-150 flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+        </svg>
+        Guardar cálculo
+      </button>
+      <button id="btn-new"
+        class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-150 flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Nuevo cálculo
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 md:ml-[240px] p-4 md:p-8 pt-20 md:pt-8 custom-scrollbar">
+    <header class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Panel Analítico de Importaciones</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Modelado financiero sin backend y persistencia local</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="btn-load-demo"
+          class="hidden text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900 px-3 py-1.5 rounded-md font-medium hover:bg-emerald-100 transition-colors">Cargar
+          ejemplo</button>
+        <button id="btn-theme"
+          class="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none">
+          <svg id="theme-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <form id="calc-form" onsubmit="event.preventDefault();" autocomplete="off" class="space-y-6">
+
+      <section id="sec-generales"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+            </path>
+          </svg>
+          Datos Generales de la Operación
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Nombre del artículo <span
+                class="text-red-500">*</span></label>
+            <input type="text" id="art-name" required
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Referencia / SKU</label>
+            <input type="text" id="art-ref"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Proveedor <span
+                class="text-red-500">*</span></label>
+            <input type="text" id="art-supplier" required
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">País de compra</label>
+            <select id="art-country"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="China">China</option>
+              <option value="India">India</option>
+              <option value="Vietnam">Vietnam</option>
+              <option value="Bangladesh">Bangladesh</option>
+              <option value="Turquía">Turquía</option>
+              <option value="EE.UU.">EE.UU.</option>
+              <option value="Otro">Otro (Especificar)</option>
+            </select>
+            <input type="text" id="art-country-other" placeholder="¿Qué país?"
+              class="w-full mt-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 hidden">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Moneda de compra</label>
+            <select id="currency-purchase"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="USD">USD - Dólar Estadounidense</option>
+              <option value="EUR">EUR - Euro</option>
+              <option value="GBP">GBP - Libra Esterlina</option>
+              <option value="CNY">CNY - Yuan Chino</option>
+              <option value="OTHER">Otra divisa</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Moneda de venta</label>
+            <select id="currency-sale"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="EUR">EUR - Euro</option>
+              <option value="USD">USD - Dólar Estadounidense</option>
+              <option value="GBP">GBP - Libra Esterlina</option>
+              <option value="CNY">CNY - Yuan Chino</option>
+              <option value="OTHER">Otra divisa</option>
+            </select>
+          </div>
+        </div>
+        <div id="exchange-rate-container" class="mt-4 max-w-sm">
+          <label id="lbl-exchange-rate" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Tipo
+            de cambio (1 USD = X EUR) <span class="text-red-500">*</span></label>
+          <input type="number" step="any" min="0.000001" id="exchange-rate" value="1"
+            class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="text-xs text-slate-400 mt-1">Usa el tipo de cambio contable de la fecha de la operación.</p>
+        </div>
+      </section>
+
+      <section id="sec-fob"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 10v4m0-4h3m-3 0H9m12-5a9 9 0 11-18 0 9 9 0 0118 0z">
+            </path>
+          </svg>
+          Estructura de Coste de Fábrica (FOB)
+          <span class="text-slate-400 cursor-help"
+            title="Free On Board: precio de la mercancía hasta que sale del puerto de origen. No incluye flete ni seguro internacional.">ℹ️</span>
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Precio Unitario FOB (Moneda
+              compra)</label>
+            <input type="number" step="any" min="0" id="fob-unit-price" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Cantidad total
+              (Unidades)</label>
+            <input type="number" min="0" id="fob-quantity" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div
+          class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 mt-4">
+          <span class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide block">FOB Mercancía
+            Total</span>
+          <p id="out-fob-total" class="font-mono text-xl font-semibold text-slate-800 dark:text-emerald-400 mt-1">0,00
+          </p>
+        </div>
+      </section>
+
+      <section id="sec-embalaje"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+          </svg>
+          Métricas de Embalaje y Cubaje
+          <span class="text-slate-400 cursor-help"
+            title="Cubic Meter: medida de volumen estándar en logística. 1 CBM = 1m × 1m × 1m.">ℹ️</span>
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Unidades / caja</label>
+            <input type="number" min="1" id="pack-units" value="1"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Nº cajas totales</label>
+            <input type="number" min="0" id="pack-boxes" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <span id="warn-boxes"
+              class="text-[10px] text-amber-600 dark:text-amber-400 hidden font-medium block mt-0.5">Valor editado
+              manual</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Largo (cm)</label>
+            <input type="number" step="any" min="0" id="pack-length" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Ancho (cm)</label>
+            <input type="number" step="any" min="0" id="pack-width" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Alto (cm)</label>
+            <input type="number" step="any" min="0" id="pack-height" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div
+            class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2">
+            <span class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Volumen por caja
+              (CBM)</span>
+            <p id="out-cbm-box" class="font-mono text-base font-semibold text-slate-700 dark:text-slate-300">0,000 m³
+            </p>
+          </div>
+          <div
+            class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2">
+            <span class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Volumen total del
+              lote</span>
+            <p id="out-cbm-total" class="font-mono text-base font-semibold text-slate-700 dark:text-slate-300">0,000 m³
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-contenedor"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2">
+            </path>
+          </svg>
+          Dimensionamiento del Contenedor Técnico
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" id="container-selectors">
+          <div data-value="20ft"
+            class="container-card cursor-pointer border-2 border-blue-600 bg-blue-50/30 dark:bg-slate-900 rounded-xl p-4 transition-all">
+            <div class="flex justify-between items-center mb-1"><span
+                class="font-semibold text-slate-800 dark:text-white">Contenedor 20' Standard</span><span
+                class="radio-dot w-3 h-3 rounded-full bg-blue-600"></span></div>
+            <span class="text-xs text-slate-500">Capacidad teórica máxima: <b class="font-mono">33 CBM</b></span>
+          </div>
+          <div data-value="40ft"
+            class="container-card cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl p-4 transition-all">
+            <div class="flex justify-between items-center mb-1"><span
+                class="font-semibold text-slate-800 dark:text-white">Contenedor 40' Standard</span><span
+                class="radio-dot w-3 h-3 rounded-full border border-slate-300"></span></div>
+            <span class="text-xs text-slate-500">Capacidad teórica máxima: <b class="font-mono">67 CBM</b></span>
+          </div>
+          <div data-value="40hc"
+            class="container-card cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl p-4 transition-all">
+            <div class="flex justify-between items-center mb-1"><span
+                class="font-semibold text-slate-800 dark:text-white">Contenedor 40' High Cube</span><span
+                class="radio-dot w-3 h-3 rounded-full border border-slate-300"></span></div>
+            <span class="text-xs text-slate-500">Capacidad teórica máxima: <b class="font-mono">76 CBM</b></span>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs font-medium"><span class="text-slate-500">Ocupación volumétrica
+              estimada:</span><span id="txt-occupancy" class="font-mono font-bold">0%</span></div>
+          <div
+            class="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-3.5 overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div id="bar-occupancy" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div id="banner-overcapacity"
+          class="hidden mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg text-red-700 dark:text-red-400 text-xs flex gap-2 items-start">
+          <span>⚠️</span>
+          <div><b>Exceso de capacidad crítica:</b> La mercancía volumétricamente supera la capacidad física máxima.
+            Seleccione un contenedor superior o refine la cantidad.</div>
+        </div>
+        <div id="banner-undercapacity"
+          class="hidden mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg text-blue-700 dark:text-blue-400 text-xs flex gap-2 items-start">
+          <span>ℹ️</span>
+          <div><b>Infrautilización del espacio:</b> El contenedor se sitúa por debajo del 50% de llenado. En modalidad
+            FCL se asume el coste integro. Evalúe pasar a consolidado LCL si es viable por tarifas.</div>
+        </div>
+      </section>
+
+      <section id="sec-flete"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2.5M14 22c0-5.523-4.477-10-10-10H3">
+            </path>
+          </svg>
+          Flete y Transporte Marítimo Internacional
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Puerto de Origen</label>
+            <input type="text" id="freight-origin" placeholder="Ej. Shanghai"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Puerto de Destino</label>
+            <input type="text" id="freight-destination" placeholder="Ej. Valencia"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Moneda de cotización
+              flete</label>
+            <select id="freight-currency"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="USD">USD - Dólar</option>
+              <option value="EUR">EUR - Euro</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Coste base del flete
+              total</label>
+            <input type="number" step="any" min="0" id="freight-cost" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Modalidad Logística del Envío
+            <span class="text-slate-400 cursor-help"
+              title="FCL: Contenedor completo. LCL: Carga consolidada compartida.">ℹ️</span></label>
+          <div class="flex gap-6">
+            <label class="inline-flex items-center cursor-pointer"><input type="radio" name="freight-mode" value="FCL"
+                checked class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"><span
+                class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">FCL (Full Container
+                Load)</span></label>
+            <label class="inline-flex items-center cursor-pointer"><input type="radio" name="freight-mode" value="LCL"
+                class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"><span
+                class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">LCL (Less than Container
+                Load)</span></label>
+          </div>
+        </div>
+
+        <div
+          class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 mt-4">
+          <span class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide block">Flete Marítimo
+            Imputable Prorrateado</span>
+          <p id="out-freight-allocated"
+            class="font-mono text-xl font-semibold text-slate-800 dark:text-emerald-400 mt-1">0,00</p>
+        </div>
+      </section>
+
+      <section id="sec-seguro"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+            </path>
+          </svg>
+          Seguro de Mercancías en Tránsito
+        </h2>
+        <div class="flex gap-4 mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+          <button type="button" id="tab-ins-percent"
+            class="text-sm font-medium text-blue-600 border-b-2 border-blue-600 pb-1.5 px-1 focus:outline-none">Porcentaje
+            sobre FOB</button>
+          <button type="button" id="tab-ins-fixed"
+            class="text-sm font-medium text-slate-400 hover:text-slate-600 pb-1.5 px-1 focus:outline-none">Importe de
+            Prima Fijo</button>
+        </div>
+        <div id="container-ins-percent">
+          <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Tasa de Cobertura de Seguro
+            (%)</label>
+          <input type="number" step="any" min="0" id="ins-rate" value="0"
+            class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xs">
+        </div>
+        <div id="container-ins-fixed" class="hidden">
+          <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Importe Total del Seguro
+            (Moneda de compra)</label>
+          <input type="number" step="any" min="0" id="ins-fixed" value="0"
+            class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xs">
+        </div>
+        <div
+          class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 mt-4">
+          <span class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide block">Coste Seguro
+            Consolidado</span>
+          <p id="out-insurance-cost" class="font-mono text-xl font-semibold text-slate-800 dark:text-emerald-400 mt-1">
+            0,00</p>
+        </div>
+      </section>
+
+      <section id="sec-aranceles"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+            </path>
+          </svg>
+          Gravámenes Arancelarios y Aduanas de la UE
+          <span class="text-slate-400 cursor-help"
+            title="En la UE, el arancel se calcula sobre el valor CIF (mercancía + flete internacional + seguro), no solo sobre el FOB.">ℹ️</span>
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Partida Arancelaria (Código
+                HS)</label>
+              <a href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=es" target="_blank"
+                rel="noopener" class="text-xs text-blue-600 hover:underline flex items-center gap-0.5">Consultar TARIC
+                ↗</a>
+            </div>
+            <input type="text" id="tariff-hscode" placeholder="Ej. 6403.91"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Arancel Aplicable
+              (%)</label>
+            <input type="number" step="any" min="0" id="tariff-rate" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div
+            class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2">
+            <span class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Valor en Aduana Base
+              (CIF)</span>
+            <p id="out-cif-base" class="font-mono text-base font-semibold text-slate-700 dark:text-slate-300">0,00</p>
+          </div>
+          <div
+            class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2">
+            <span class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Liquidación de
+              Arancel</span>
+            <p id="out-tariff-amount" class="font-mono text-base font-semibold text-slate-700 dark:text-slate-300">0,00
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-destino"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z">
+            </path>
+          </svg>
+          Liquidación de Gastos Operacionales en Destino (Moneda de Venta)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Tasas de
+              Transitario</label>
+            <input type="number" step="any" min="0" id="dest-forwarder" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Despacho de Aduanas</label>
+            <input type="number" step="any" min="0" id="dest-customs" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Transporte Nacional
+              Local</label>
+            <input type="number" step="any" min="0" id="dest-transport" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Misceláneos / Otros
+              Gastos</label>
+            <input type="number" step="any" min="0" id="dest-other" value="0"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <p class="text-xs text-slate-400 mt-3 italic">Nota legal: Los importes de IVA a la importación no se consolidan
+          dentro del coste del producto por su naturaleza fiscal deducible trimestralmente.</p>
+      </section>
+
+      <section id="sec-resultados1" class="bg-[#1E3A5F] text-white rounded-xl shadow-lg p-6 scroll-mt-24">
+        <div class="flex flex-col lg:flex-row justify-between gap-8 items-center">
+          <div class="w-full lg:w-1/2 space-y-4">
+            <h2 class="text-lg font-bold tracking-wide flex items-center gap-2 text-blue-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z">
+                </path>
+              </svg>
+              Consolidado Analítico de Costes de Importación
+            </h2>
+
+            <div class="border-t border-slate-700 pt-3 space-y-2 text-sm">
+              <div class="flex justify-between"><span class="text-slate-400">Base Mercancía FOB Total:</span><span
+                  id="res1-fob" class="font-mono">0,00 EUR</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Logística de Flete Marítimo
+                  Asignado:</span><span id="res1-freight" class="font-mono">0,00 EUR</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Seguro Internacional:</span><span
+                  id="res1-insurance" class="font-mono">0,00 EUR</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Liquidación de Aranceles:</span><span
+                  id="res1-tariff" class="font-mono">0,00 EUR</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Gastos Locales de Destino:</span><span
+                  id="res1-dest" class="font-mono">0,00 EUR</span></div>
+              <div class="flex justify-between border-t border-slate-700 pt-2 font-semibold text-base"><span
+                  class="text-white">COSTE TOTAL DE LA IMPORTACIÓN:</span><span id="res1-total"
+                  class="font-mono text-blue-300">0,00 EUR</span></div>
+            </div>
+
+            <div class="bg-slate-900/60 rounded-xl p-4 text-center border border-slate-700/60">
+              <span class="text-xs text-slate-400 uppercase tracking-widest block font-medium">Coste Unitario
+                Real</span>
+              <div id="res1-unit" class="font-mono text-3xl md:text-4xl font-bold text-[#059669] my-1">0,00 EUR/ud</div>
+              <span id="res1-quantity-lbl" class="text-xs text-slate-400 block">(Calculado para 0 unidades)</span>
+            </div>
+          </div>
+
+          <div class="w-full lg:w-1/2 flex justify-center items-center max-w-[320px] lg:max-w-[360px]">
+            <div class="relative w-full aspect-square">
+              <canvas id="chart-costs"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-comercial"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 scroll-mt-24">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+          </svg>
+          Estructura Comercial y Márgenes (% sobre el PVP)
+        </h2>
+        <p class="text-xs text-slate-500 mb-4">Los costes fijos y variables abajo detallados computan sobre el <b>Precio
+            de Venta Final</b>, no sobre la adquisición.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Coste Unit.
+              Adquisición</label>
+            <div class="flex">
+              <input type="number" step="any" min="0" id="pricing-cost-override" value="0" readonly
+                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-l-lg px-3 py-2 text-sm text-slate-500 font-mono focus:outline-none">
+              <button type="button" id="btn-override"
+                class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 px-3 rounded-r-lg text-xs font-semibold focus:outline-none"
+                title="Permitir introducción manual para cálculo independiente">Editar</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Gastos Variables
+              (%)</label>
+            <input type="number" step="any" min="0" id="price-var" value="0" placeholder="Ej. 15"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Estructura Fija (%)</label>
+            <input type="number" step="any" min="0" id="price-fix" value="0" placeholder="Ej. 10"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Gastos Financieros
+              (%)</label>
+            <input type="number" step="any" min="0" id="price-fin" value="0" placeholder="Ej. 3"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Beneficio Objetivo
+              (%)</label>
+            <input type="number" step="any" min="0" id="price-profit" value="0" placeholder="Ej. 20"
+              class="w-full border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="mt-5 space-y-1.5">
+          <span class="text-xs font-medium text-slate-500 block">Estructura Analítica del PVP (%):</span>
+          <div id="bar-pricing-flow"
+            class="w-full bg-slate-100 dark:bg-slate-900 h-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 flex text-[10px] font-mono font-bold text-white text-center items-center">
+          </div>
+        </div>
+
+        <div id="error-pricing"
+          class="hidden mt-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg text-red-700 dark:text-red-400 text-xs font-semibold">
+          ⚠️ Error de viabilidad: La agregación de costes marginales y beneficio supera o iguala el 100%. Es físicamente
+          imposible calcular un precio de venta finito en base a este modelo.
+        </div>
+      </section>
+
+      <section id="sec-resultados2"
+        class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md p-6 scroll-mt-24">
+        <div class="flex flex-col lg:flex-row justify-between gap-8 items-center">
+          <div class="w-full lg:w-7/12">
+            <h2 class="text-base font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                </path>
+              </svg>
+              Análisis de Viabilidad de Precios de Venta Recomendados (PVP)
+            </h2>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm border-collapse text-left">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-slate-700 text-slate-400 text-xs uppercase">
+                    <th class="pb-2 font-medium">Indicador de Margen</th>
+                    <th class="pb-2 font-mono text-right font-medium">Importe / Ratio</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                  <tr>
+                    <td class="py-2.5 text-slate-600 dark:text-slate-400">Coste de adquisición indexado</td>
+                    <td id="res2-cost" class="font-mono text-right text-slate-800 dark:text-slate-300">0,00 EUR</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 text-slate-600 dark:text-slate-400 font-medium">Precio Mínimo de umbral (Punto
+                      equilibrio, sin beneficio)</td>
+                    <td id="res2-min" class="font-mono text-right text-slate-800 dark:text-slate-300">0,00 EUR</td>
+                  </tr>
+                  <tr class="font-bold text-base text-slate-900 dark:text-white">
+                    <td class="py-3 text-blue-600 dark:text-blue-400">PRECIO DE VENTA RECOMENDADO (PVP)</td>
+                    <td id="res2-rec" class="font-mono text-right text-blue-600 dark:text-blue-400 text-lg">0,00 EUR
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 text-slate-600 dark:text-slate-400">Margen Comercial Neto Unitario</td>
+                    <td id="res2-unit-profit" class="font-mono text-right text-slate-800 dark:text-slate-300">0,00 EUR
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 text-slate-600 dark:text-slate-400">Margen Bruto sobre Ventas (%)</td>
+                    <td id="res2-gross-pct" class="font-mono text-right text-slate-800 dark:text-slate-300">0,0%</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 text-slate-600 dark:text-slate-400">Margen Neto sobre Ventas (%)</td>
+                    <td id="res2-net-pct" class="font-mono text-right text-slate-800 dark:text-slate-300">0,0%</td>
+                  </tr>
+                  <tr class="font-semibold text-emerald-600 dark:text-emerald-400">
+                    <td class="py-2.5">RETORNO NETO ESTIMADO DE LA OPERACIÓN</td>
+                    <td id="res2-total-profit" class="font-mono text-right text-lg">0,00 EUR</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="w-full lg:w-1/2 flex items-center justify-center max-h-[220px]">
+            <canvas id="chart-pricing"></canvas>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-wrap gap-3">
+          <button type="button" id="btn-export-pdf"
+            class="bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium text-xs py-2 px-4 rounded-lg transition flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                clip-rule="evenodd"></path>
+            </svg>
+            Exportar Informe Ejecutivo (PDF)
+          </button>
+          <button type="button" id="btn-export-excel"
+            class="bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs py-2 px-4 rounded-lg transition flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-200" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm3 1a1 1 0 000 2h6a1 1 0 100-2H7zm0 4a1 1 0 100 2h6a1 1 0 100-2H7zm0 4a1 1 0 100 2h6a1 1 0 100-2H7z"
+                clip-rule="evenodd"></path>
+            </svg>
+            Exportar Matriz de Costes (Excel)
+          </button>
+        </div>
+      </section>
+    </form>
+
+    <section id="sec-historico"
+      class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mt-6 scroll-mt-24">
+      <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Histórico de Operaciones Auditadas
+      </h2>
+
+      <div class="mb-4 flex flex-col md:flex-row gap-3">
+        <input type="text" id="hist-search" placeholder="Filtrar por artículo o proveedor..."
+          class="w-full md:max-w-md border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div id="chart-history-container"
+        class="hidden mb-6 p-4 border border-slate-100 dark:border-slate-700 rounded-xl max-h-[225px]">
+        <canvas id="chart-history"></canvas>
+      </div>
+
+      <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+        <table class="w-full text-xs text-left border-collapse" id="table-history">
+          <thead class="bg-slate-50 dark:bg-slate-900 font-semibold text-slate-600 dark:text-slate-400 select-none">
+            <tr>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 cursor-pointer" data-sort="date">Fecha ⇅
+              </th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 cursor-pointer" data-sort="name">Artículo ⇅
+              </th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 cursor-pointer" data-sort="supplier">
+                Proveedor ⇅</th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 text-right">Unidades</th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 text-right">Coste/ud</th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 text-right">PVP Rec.</th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 text-center">Margen Neto</th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 text-right">Retorno Total</th>
+              <th class="p-3 border-b border-slate-200 dark:border-slate-700 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="hist-tbody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal-view"
+    class="fixed inset-0 z-50 bg-black/50 hidden backdrop-blur-sm justify-center items-center p-4 animate-fade-in">
+    <div
+      class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700">
+      <div
+        class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex flex-col">
+          <span id="modal-title">Detalle de Operación</span>
+          <span id="modal-subtitle" class="text-xs text-slate-400 font-normal mt-0.5"></span>
+        </h3>
+        <button type="button" id="btn-close-modal"
+          class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <div class="p-6 overflow-y-auto text-sm space-y-4 custom-scrollbar" id="modal-body">
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end bg-slate-50 dark:bg-slate-900">
+        <button type="button" id="btn-close-modal-footer"
+          class="bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs py-2 px-4 rounded-lg transition">Cerrar
+          visualización</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/module1.js"></script>
+  <script src="js/module2.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>
